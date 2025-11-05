@@ -28,9 +28,9 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, 
   storage: multerS3({
-    s3, // ✅ Using S3Client from AWS SDK v3
+    s3, 
     bucket: process.env.S3_BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
