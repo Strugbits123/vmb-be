@@ -123,14 +123,44 @@ const login = async (req, res) => {
   });
 };
 
+// const getCurrentUser = async (req, res) => {
+//   res.json({
+//     _id: req.user._id,
+//     email: req.user.email,
+//     role: req.user.role,
+//   });
+// };
+// controllers/authController.js
 const getCurrentUser = async (req, res) => {
-  res.json({
-    _id: req.user._id,
-    email: req.user.email,
-    role: req.user.role,
-  });
-};
+  const user = req.user;
 
+  const userData = {
+    _id: user._id,
+    email: user.email,
+    role: user.role,
+    fullName: user.fullName,
+    address: user.address,
+    zipcode: user.zipcode,
+  };
+
+  if (user.role === 'saloon_owner') {
+    Object.assign(userData, {
+      saloonName: user.saloonName,
+      saloonAddress: user.saloonAddress,
+      saloonZipcode: user.saloonZipcode,
+      phoneNumber: user.phoneNumber,
+      startTime: user.startTime,
+      endTime: user.endTime,
+      workingDays: user.workingDays,
+      licenseDocument: user.licenseDocument,
+      description: user.description,
+      profilePic: user.profilePic,
+      saloonPhotos: user.saloonPhotos,
+    });
+  }
+
+  res.json(userData);
+};
 module.exports = {
   registerCustomer,
   registerSaloonOwner,
