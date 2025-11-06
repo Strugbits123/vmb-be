@@ -2,7 +2,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');  
-
+const Customer = require('../../models/Customer');
+const SaloonOwner = require('../../models/SaloonOwner');
 const generateToken = (id, role) =>
   jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
@@ -18,13 +19,12 @@ const registerCustomer = async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashed = await bcrypt.hash(password, salt);
 
-  const customer = await User.create({
+  const customer = await Customer.create({
     fullName,
     email,
     address,
     zipcode,
     password: hashed,
-    role: 'customer',
   });
 
   const token = generateToken(customer._id, 'customer');
@@ -63,13 +63,13 @@ const registerSaloonOwner = async (req, res) => {
   const profilePic = req.files?.profilePic?.[0]?.location;
   const saloonPhotos = req.files?.saloonPhotos?.map(f => f.location) || [];
 
-  const owner = await User.create({
+  // Use SaloonOwner model
+  const owner = await SaloonOwner.create({
     fullName,
     email,
     address,
     zipcode,
     password: hashed,
-    role: 'saloon_owner',
     saloonName,
     saloonAddress,
     saloonZipcode: saloonZipcode || zipcode,
