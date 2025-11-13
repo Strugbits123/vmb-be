@@ -2,11 +2,13 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User/user.model');
-const ErrorHandler = require("../utils/errorHandler");
+const { ErrorHandler } = require("../utils/responseHandler");
 
 const protect = async (req, res, next) => {
+            console.log("req", req);
+            
     const token = req.cookies?.jwt;
-    if (!token) return ErrorHandler(`Invalid token`, 401, req, res);
+    if (!token) return ErrorHandler(`Invalid or expired token`, 401, req, res);
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);

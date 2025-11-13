@@ -1,49 +1,16 @@
-const User = require("../models/User/user.model");
-const Salonowner = require("../models/User/salon-owner.model");
-const SuccessHandler = require("../utils/successHandler");
-const { ErrorHandler, getValidationErrorMessage } = require("../utils/errorHandler");
-// const getValidationErrorMessage = require("../utils/errorHandler");
-const dotenv = require("dotenv");
+const authService = require("../services/auth.service");
+const utils = require("../utils/util");
+const { ErrorHandler,
+    getValidationErrorMessage,
+    SuccessHandler } = require("../utils/responseHandler");
 
-dotenv.config({
-    path: './src/config/.env'
-});
 
-// Register Customer
 const registerCustomer = async (req, res) => {
     try {
         const { name, email, address, zipcode, password, confirmPassword } = req.body;
-        console.log(req.body);
-
-        if (password !== confirmPassword) {
-            return ErrorHandler("Passwords do not match", 400, req, res);
-        }
-
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return ErrorHandler("Email already in use", 400, req, res);
-        }
-
-        const user = await User.create({
-            name,
-            email,
-            address,
-            zipcode,
-            password,
-            status: 'approved'
-        });
-
-        const token = user.getSignedJwtToken();
-        // Set cookie options
-        const cookieOptions = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        };
-        res.cookie('jwt', token, cookieOptions);
-
-        return SuccessHandler("Customer registered successfully", {token, user}, 201, res);
+        const result = await authService.registerCustomer({ name, email, address, zipcode, password, confirmPassword });
+        utils.setAuthCookie(res, result.token);
+        return SuccessHandler("Customer registered successfully", result, 201, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
         return ErrorHandler(message, 400, req, res);
@@ -52,106 +19,77 @@ const registerCustomer = async (req, res) => {
 
 const registerSalonOwner = async (req, res) => {
     try {
-        const { name,
-            email,
-            address,
-            zipcode,
-            password,
-            confirmPassword,
-            salonName,
-            salonAddress,
-            salonZipcode,
-            phoneNumber,
-            startTime,
-            endTime,
-            workingDays,
-            licenseDocument,
-            description,
-            profilePic,
-            salonPhotos
-        } = req.body;
-
-        if (password !== confirmPassword) {
-            return ErrorHandler("Passwords do not match", 400, req, res);
-        }
-
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return ErrorHandler("Email already in use", 400, req, res);
-        }
-        
-        const salonowner = await Salonowner.create({
-            name,
-            email,
-            address,
-            zipcode,
-            password,
-            role: 'salon-owner',
-            status: 'pending',
-            salonName,
-            salonAddress,
-            salonZipcode,
-            phoneNumber,
-            startTime,
-            endTime,
-            workingDays,
-            licenseDocument,
-            description,
-            profilePic,
-            salonPhotos
-        });
-
-        return SuccessHandler("User registered successfully", salonowner, 201, res);
+        const result = await authService.registerSalonOwner(req.body);
+        return SuccessHandler("Your acccount is awaiting approval. You will be notified via email.", result, 201, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
         return ErrorHandler(message, 400, req, res);
     }
 };
 
-// Login User
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return ErrorHandler("User not found", 401, req, res);
-        }
-
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return ErrorHandler("Invalid Password", 401, req, res);
-        }
-        // Check if user is approved 
-        if (user.status !== 'approved') {
-            return ErrorHandler(`User status is ${user.status}. Access denied.`, 403, req, res);
-        }
-        
-        const token = user.getSignedJwtToken();
-        // Set cookie options
-        const cookieOptions = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        };
-        res.cookie('jwt', token, cookieOptions);
-
-        return SuccessHandler("Login successful", { token, user }, 200, res);
+        const result = await authService.login(req.body);
+        utils.setAuthCookie(res, result.token);
+        return SuccessHandler("Login successful", result, 200, res, req);
     } catch (error) {
-        return ErrorHandler(error.message, 500, req, res);
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
     }
 };
 
-// Logout User
 const logout = (req, res) => {
     res.clearCookie('jwt');
-    return SuccessHandler("Logout successful", null, 200, req, res);
+    return SuccessHandler("Logout successful", null, 200, res, req);
 };
 
-module.exports = {
-    registerCustomer,
-    registerSalonOwner,
-    login,
-    logout
+
+const forgotPassword = async (req, res) => {
+    try {
+        if (!req.body || !req.body.email) throw new Error('Email is required');
+        const { email } = req.body;
+        console.log("email", email);
+
+        const result = await authService.forgotPassword(email);
+        return SuccessHandler("Password reset email sent successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
 };
+
+const resetPassword = async (req, res) => {
+    try {
+        if (!req.body || !req.body.newPassword || !req.body.confirmPassword) {
+            throw new Error('New password and confirm password are required');
+        }
+        const { token } = req.params;
+        const { newPassword, confirmPassword } = req.body;
+        const result = await authService.resetPassword(token, newPassword, confirmPassword);
+        return SuccessHandler("Password has been reset successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
+};
+
+const changePassword = async (req, res) => {
+    try {
+        if (!req.body || !req.body.newPassword || !req.body.confirmPassword || !req.body.currentPassword) {
+            throw new Error('All password fields are required');
+        }
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+        const userId = req.user._id; // set by protect middleware
+
+        const result = await authService.changePassword(userId, currentPassword, newPassword, confirmPassword);
+
+        return SuccessHandler('Password changed successfully', result, 200, res, req);
+    } catch (err) {
+        const message = getValidationErrorMessage(err);
+        return ErrorHandler(message || 'Something went wrong', 400, req, res);
+    }
+};
+
+
+module.exports = { registerCustomer, registerSalonOwner, login, logout, forgotPassword, resetPassword, changePassword };
+
