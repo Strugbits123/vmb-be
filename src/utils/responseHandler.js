@@ -2,6 +2,9 @@ const { logger } = require('../utils/logger');
 
 const ErrorHandler = (message, statusCode, req, res) => {
 
+    console.log("error from here");
+    
+
     logger.error(
         {
             message: message,

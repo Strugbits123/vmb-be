@@ -30,6 +30,7 @@ const userSchema = new Schema(
       required: [true, "Email is required"],
       lowercase: true,
       unique: true,
+      immutable: true,
       validate: {
         validator: (value) => validator.isEmail(value),
         message: "Please provide a valid email",
@@ -60,6 +61,7 @@ const userSchema = new Schema(
       enum: ["customer", "salon-owner", "admin"],
       required: true,
       default: "customer",
+      immutable: true,
     },
     status: {
       type: String,
@@ -109,7 +111,7 @@ userSchema.methods.getSignedJwtToken = function () {
   return jwt.sign(
     { id: this._id },
     process.env.JWT_SECRET,
-    { expiresIn: 3600 * 24 * 7 } // 7 days
+    { expiresIn: 3600 * 24 * 30 } // 30 days
   );
 };
 

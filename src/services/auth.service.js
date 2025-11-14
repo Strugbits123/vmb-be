@@ -15,7 +15,10 @@ const registerCustomer = async ({ name, email, address, zipcode, password, confi
   });
 
   const token = user.getSignedJwtToken();
-  return { token, user };
+
+  const userObj = user.toObject();
+  delete userObj.password;
+  return { token, user: userObj };
 };
 
 const registerSalonOwner = async (data) => {
@@ -31,7 +34,7 @@ const registerSalonOwner = async (data) => {
     status: "pending",
   });
 
-  return salonOwner;
+  return {};
 };
 
 const login = async ({ email, password }) => {
@@ -45,7 +48,11 @@ const login = async ({ email, password }) => {
     throw new Error(`User status is ${user.status}. Access denied.`);
 
   const token = user.getSignedJwtToken();
-  return { token, user };
+
+  const userObj = user.toObject();
+  delete userObj.password;
+
+  return { token, user: userObj };
 };
 
 const forgotPassword = async (email) => {

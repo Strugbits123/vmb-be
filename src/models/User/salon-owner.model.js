@@ -76,6 +76,11 @@ const salonOwnerSchema = new Schema({
         type: String,
         trim: true
     },
+    holdReason: {
+        type: String,
+        trim: true,
+        default: ""
+    },
     salonPhotos: {
         type: [String],
         default: []

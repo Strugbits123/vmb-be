@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const router = require("./routes/index");
 const utils = require("./utils/util");
 const cookieParser = require('cookie-parser');
+const { ErrorHandler } = require("./utils/responseHandler");
 
 
 const app = express();
@@ -35,8 +36,7 @@ utils.setupSchedulers();
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
-    console.log("Not found");
-    res.status(404).json({ error: "Not found" });
+    ErrorHandler("Not a valid API route", 404, req, res);
 });
 
 module.exports = app;
