@@ -11,6 +11,7 @@ const updateUser = async (userId, updateData) => {
     if(!updateData || Object.keys(updateData).length === 0) {
         throw new Error('No data provided for update');
     }
+    
     const isValidUser = await getUserById(userId);
     if (!isValidUser) {
         throw new Error('User not found');

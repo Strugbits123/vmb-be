@@ -1,12 +1,9 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const User = require("./user.model");
-const dotenv = require("dotenv");
 const validator = require("validator");
 
-dotenv.config({
-    path: "./src/config/.env"
-});
+
 
 const salonOwnerSchema = new Schema({
     salonName: {

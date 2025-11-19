@@ -70,7 +70,7 @@ const forgotPassword = async (email) => {
   await sendMail({
     to: user.email,
     templateId: process.env.SENDGRID_FORGOT_PASSWORD_TEMPLATE_ID,
-    dynamicTemplateData: {
+    templataData: {
       reset_link: resetUrl,
     },
   });

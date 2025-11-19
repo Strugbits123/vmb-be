@@ -1,10 +1,6 @@
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const { logger } = require('../utils/logger');
 
-dotenv.config({ 
-    path: "./src/config/.env" 
-});
 
 const connectDB = async () => {
     try {

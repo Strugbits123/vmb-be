@@ -1,9 +1,6 @@
 const { logger } = require('../utils/logger');
 
-const ErrorHandler = (message, statusCode, req, res) => {
-
-    console.log("error from here");
-    
+const ErrorHandler = (message, statusCode, req, res) => {    
 
     logger.error(
         {
@@ -52,6 +49,8 @@ const getValidationErrorMessage = (error) => {
 
     return error.message || "An unknown error occurred";
 }
+
+
 
 
 module.exports = {

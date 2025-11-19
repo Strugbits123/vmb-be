@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const router = require("./routes/index");
 const utils = require("./utils/util");
 const cookieParser = require('cookie-parser');
@@ -9,9 +8,7 @@ const { ErrorHandler } = require("./utils/responseHandler");
 
 const app = express();
 
-dotenv.config({ 
-    path: "./src/config/.env" 
-});
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

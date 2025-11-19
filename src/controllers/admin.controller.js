@@ -1,4 +1,5 @@
 const adminService = require("../services/admin.service");
+const walletService = require("../services/wallet.service");
 const { ErrorHandler,
     getValidationErrorMessage,
     SuccessHandler } = require("../utils/responseHandler");
@@ -22,6 +23,7 @@ const approveSalon = async (req, res) => {
     try {
         const { salonId } = req.params;
         const result = await adminService.approveSalon(salonId);
+        const wallet = await walletService.createWallet({ userId: result._id, balance: 0 });
         return SuccessHandler("Salon approved successfully", result, 200, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);

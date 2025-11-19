@@ -1,4 +1,5 @@
 const authService = require("../services/auth.service");
+const walletService = require("../services/wallet.service");
 const utils = require("../utils/util");
 const { ErrorHandler,
     getValidationErrorMessage,
@@ -10,6 +11,7 @@ const registerCustomer = async (req, res) => {
         const { name, email, address, zipcode, password, confirmPassword } = req.body;
         const result = await authService.registerCustomer({ name, email, address, zipcode, password, confirmPassword });
         utils.setAuthCookie(res, result.token);
+        const wallet = await walletService.createWallet({ userId: result._id, balance: 0 });
         return SuccessHandler("Customer registered successfully", result, 201, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
