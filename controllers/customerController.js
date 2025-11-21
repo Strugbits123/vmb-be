@@ -1,7 +1,7 @@
 // controllers/customer/customerController.js
-const GiftRequest = require('../../models/GiftRequest');
-const Appointment = require('../../models/Appointment');
-const Service = require('../../models/Service');
+const GiftRequest = require("../models/GiftRequest");
+const Appointment = require("../models/Appointment");
+const Service = require("../models/Service");
 
 // Request Gift
 const requestGift = async (req, res) => {
@@ -13,7 +13,7 @@ const requestGift = async (req, res) => {
     gifterEmail,
     saloonOwner: saloonId,
     service: serviceId,
-    message
+    message,
   });
 
   res.status(201).json(gift);
@@ -25,7 +25,7 @@ const bookAppointment = async (req, res) => {
   const customerId = req.user._id;
 
   const service = await Service.findById(serviceId);
-  if (!service) return res.status(404).json({ message: 'Service not found' });
+  if (!service) return res.status(404).json({ message: "Service not found" });
 
   const appointment = await Appointment.create({
     customer: customerId,
@@ -33,7 +33,7 @@ const bookAppointment = async (req, res) => {
     service: serviceId,
     date,
     time,
-    paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending'
+    paymentStatus: paymentMethod === "online" ? "paid" : "pending",
   });
 
   res.status(201).json(appointment);
@@ -44,14 +44,18 @@ const rescheduleAppointment = async (req, res) => {
   const { appointmentId, reason } = req.body;
   const customerId = req.user._id;
 
-  const appointment = await Appointment.findOne({ _id: appointmentId, customer: customerId });
-  if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+  const appointment = await Appointment.findOne({
+    _id: appointmentId,
+    customer: customerId,
+  });
+  if (!appointment)
+    return res.status(404).json({ message: "Appointment not found" });
 
-  appointment.status = 'rescheduled';
+  appointment.status = "rescheduled";
   appointment.rescheduleReason = reason;
   await appointment.save();
 
-  res.json({ message: 'Reschedule request sent', appointment });
+  res.json({ message: "Reschedule request sent", appointment });
 };
 
 // EXPORT ALL

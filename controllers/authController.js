@@ -1,20 +1,38 @@
- 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../../models/User');  
-const Customer = require('../../models/Customer');
-const SaloonOwner = require('../../models/SaloonOwner');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const Customer = require("../models/Customer");
+const SaloonOwner = require("../models/SaloonOwner");
+const Admin = require("../models/Admin");
 const generateToken = (id, role) =>
-  jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
-const registerCustomer = async (req, res) => {
-  const { fullName, email, address, zipcode, password, confirmPassword } = req.body;
-
-  if (password !== confirmPassword)
-    return res.status(400).json({ message: 'Passwords do not match' });
+const registerAdmin = async (req, res) => {
+  const { fullName, email, password } = req.body;
 
   const exists = await User.findOne({ email });
-  if (exists) return res.status(400).json({ message: 'Email already in use' });
+  if (exists) return res.status(400).json({ message: "Admin already exists" });
+
+  const salt = await bcrypt.genSalt(10);
+  const hashed = await bcrypt.hash(password, salt);
+
+  const admin = await Admin.create({
+    fullName,
+    email,
+    password: hashed,
+  });
+
+  res.status(201).json({ message: "Admin created", admin });
+};
+const registerCustomer = async (req, res) => {
+  const { fullName, email, address, zipcode, password, confirmPassword } =
+    req.body;
+
+  if (password !== confirmPassword)
+    return res.status(400).json({ message: "Passwords do not match" });
+
+  const exists = await User.findOne({ email });
+  if (exists) return res.status(400).json({ message: "Email already in use" });
 
   const salt = await bcrypt.genSalt(10);
   const hashed = await bcrypt.hash(password, salt);
@@ -27,41 +45,52 @@ const registerCustomer = async (req, res) => {
     password: hashed,
   });
 
-  const token = generateToken(customer._id, 'customer');
+  const token = generateToken(customer._id, "customer");
 
-  res.cookie('jwt', token, {
+  res.cookie("jwt", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.status(201).json({
     _id: customer._id,
     email: customer.email,
-    role: 'customer',
+    role: "customer",
   });
 };
 
 const registerSaloonOwner = async (req, res) => {
   const {
-    fullName, email, address, zipcode, password, confirmPassword,
-    saloonName, saloonAddress, saloonZipcode, phoneNumber,
-    startTime, endTime, workingDays, description
+    fullName,
+    email,
+    address,
+    zipcode,
+    password,
+    confirmPassword,
+    saloonName,
+    saloonAddress,
+    saloonZipcode,
+    phoneNumber,
+    startTime,
+    endTime,
+    workingDays,
+    description,
   } = req.body;
 
   if (password !== confirmPassword)
-    return res.status(400).json({ message: 'Passwords do not match' });
+    return res.status(400).json({ message: "Passwords do not match" });
 
   const exists = await User.findOne({ email });
-  if (exists) return res.status(400).json({ message: 'Email already in use' });
+  if (exists) return res.status(400).json({ message: "Email already in use" });
 
   const salt = await bcrypt.genSalt(10);
   const hashed = await bcrypt.hash(password, salt);
 
   const licenseDocument = req.files?.licenseDocument?.[0]?.location;
   const profilePic = req.files?.profilePic?.[0]?.location;
-  const saloonPhotos = req.files?.saloonPhotos?.map(f => f.location) || [];
+  const saloonPhotos = req.files?.saloonPhotos?.map((f) => f.location) || [];
 
   // Use SaloonOwner model
   const owner = await SaloonOwner.create({
@@ -83,36 +112,36 @@ const registerSaloonOwner = async (req, res) => {
     saloonPhotos,
   });
 
-  const token = generateToken(owner._id, 'saloon_owner');
+  const token = generateToken(owner._id, "salonOwner");
 
-  res.cookie('jwt', token, {
+  res.cookie("jwt", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.status(201).json({
     _id: owner._id,
     email: owner.email,
-    role: 'saloon_owner',
+    role: "salonOwner",
   });
 };
 
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select('+password'); 
+  const user = await User.findOne({ email }).select("+password");
 
   if (!user || !(await bcrypt.compare(password, user.password)))
-    return res.status(401).json({ message: 'Invalid credentials' });
+    return res.status(401).json({ message: "Invalid credentials" });
 
   const token = generateToken(user._id, user.role);
 
-  res.cookie('jwt', token, {
+  res.cookie("jwt", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
@@ -143,7 +172,7 @@ const getCurrentUser = async (req, res) => {
     zipcode: user.zipcode,
   };
 
-  if (user.role === 'saloon_owner') {
+  if (user.role === "salonOwner") {
     Object.assign(userData, {
       saloonName: user.saloonName,
       saloonAddress: user.saloonAddress,
@@ -166,4 +195,5 @@ module.exports = {
   registerSaloonOwner,
   login,
   getCurrentUser,
+  registerAdmin,
 };

@@ -1,6 +1,6 @@
-    // models/SaloonOwner.js
-const mongoose = require('mongoose');
-const User = require('./User');
+// models/SaloonOwner.js
+const mongoose = require("mongoose");
+const User = require("./User");
 
 const saloonOwnerSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
@@ -10,13 +10,13 @@ const saloonOwnerSchema = new mongoose.Schema({
   saloonAddress: { type: String, required: true },
   saloonZipcode: { type: String },
   phoneNumber: { type: String },
-  startTime: { type: String }, 
-  endTime: { type: String },  
-  workingDays: [{ type: String }], 
-  licenseDocument: { type: String }, 
+  startTime: { type: String },
+  endTime: { type: String },
+  workingDays: [{ type: String }],
+  licenseDocument: { type: String },
   description: { type: String },
   profilePic: { type: String },
   saloonPhotos: [{ type: String }],
 });
 
-module.exports = User.discriminator('saloon_owner', saloonOwnerSchema);
+module.exports = User.discriminator("salonOwner", saloonOwnerSchema);
