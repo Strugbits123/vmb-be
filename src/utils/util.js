@@ -21,5 +21,23 @@ const setupSchedulers = () => {
     });
 }
 
+const convertToMinutes = (timeStr) => {
+    const [_, hh, mm, period] = timeStr.match(/(0?[1-9]|1[0-2]):([0-5][0-9])\s?(AM|PM)/i);
 
-module.exports = { setAuthCookie, setupSchedulers };
+    let hours = parseInt(hh, 10);
+    const minutes = parseInt(mm, 10);
+
+    if (period.toUpperCase() === "PM" && hours !== 12) {
+        hours += 12;
+    }
+
+    if (period.toUpperCase() === "AM" && hours === 12) {
+        hours = 0;
+    }
+
+    return hours * 60 + minutes;
+}
+
+
+
+module.exports = { setAuthCookie, setupSchedulers, convertToMinutes };

@@ -4,7 +4,9 @@ const user = require("./user.route");
 const admin = require("./admin.route");
 const salonService = require("./salon-service.route");
 const wallet = require("./wallet.route");
+const gift = require("./gift.route");
 
+router.use("/gift", gift);
 router.use("/admin", admin);
 router.use("/auth", auth);
 router.use("/user", user);

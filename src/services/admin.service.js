@@ -2,11 +2,16 @@ const Salon = require("../models/User/salon-owner.model");
 const sendMail = require("../utils/sendMail");
 
 
-const getPendingSalons = async (page = 1, limit = 10) => {
+const getPendingSalons = async (page = 1, limit = 10, sort = "newest") => {
+    if(sort !== 'newest' && sort !== 'oldest') {
+        throw new Error('Invalid sort parameter');
+    }
     const skip = (page - 1) * limit;
+    const sortOrder = sort === "oldest" ? 1 : -1;
 
     const total = await Salon.countDocuments({ status: 'pending' });
     const salons = await Salon.find({ status: 'pending' })
+        .sort({ createdAt: sortOrder })
         .select('-password')
         .skip(skip)
         .limit(limit);
@@ -16,6 +21,7 @@ const getPendingSalons = async (page = 1, limit = 10) => {
         total,
         page,
         pages: Math.ceil(total / limit),
+        sort: sort
     };
 };
 
