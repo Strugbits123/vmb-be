@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const validator = require("validator");
+const Timeline = require("../Appointment/timeline.model");
 
 
 const giftSchema = new Schema({
@@ -15,6 +16,7 @@ const giftSchema = new Schema({
         required: [true, "Receiver email is required"],
         trim: true,
         lowercase: true,
+        immutable: true,
         validate: {
             validator: function (value) {
                 return validator.isEmail(value);
@@ -36,7 +38,7 @@ const giftSchema = new Schema({
             message: "At least one service must be selected",
         }
     },
-     salonId: {
+    salonId: {
         type: Schema.Types.ObjectId,
         ref: "User",
         required: [true, "Salon ID is required"],
@@ -50,14 +52,23 @@ const giftSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    paymentId: {
-        type: String,
+    payment: {
+        type: Object,
         trim: true,
     },
     status: {
         type: String,
-        enum: ["pending", "accepted", "declined", "redeemed"],
+        enum: ["pending", "accepted", "declined"],
         default: "pending",
+    },
+    timeline: {
+        type: [Timeline],
+        default: []
+    },
+    appointment: {
+        type: Schema.Types.ObjectId,
+        ref: "Appointment",
+        default: null
     },
 }, { timestamps: true });
 

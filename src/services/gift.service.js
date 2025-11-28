@@ -1,10 +1,17 @@
 const sendMail = require("../utils/sendMail");
 const Gift = require("../models/Gift/gift.model");
 const Service = require('../models/Service/salon-service.model');
+const User = require('../models/User/user.model');
 
 
-const createGift = async (giftData) => {
-    const { salonId, services } = giftData;
+const createGift = async (obj) => {
+    const { salonId, services } = obj;
+
+    const salon = await User.findById(salonId)
+
+    if(!salon){
+        throw new Error("Please provide a valid salon")
+    }
 
     for (let item of services) {
         const serviceRecord = await Service.findById(item);
@@ -15,22 +22,39 @@ const createGift = async (giftData) => {
             throw new Error(`Service ${item} does not belong to this salon`);
         }
     }
-    const gift = new Gift(giftData);
+
+    obj.timeline = [{
+        event: "Gift Request Created",
+        description: "Gift request was created successfully",
+        tag: "gift-requested"
+    }];
+
+    const gift = new Gift(obj);
     await gift.save();
     return gift;
 }
 
 const acceptGift = async (giftId, data) => {
-    if (!data.paymentId) {
+    if (!data.payment || !data.payment.payId) {
         throw new Error('Payment ID is required to accept the gift');
     }
     const gift = await Gift.findById(giftId);
     if (!gift) {
         throw new Error('Gift not found');
     }
+
+    if(gift.status === 'accepted'){
+        throw new Error("Cannot accept already accepted gift")
+    }
     gift.status = 'accepted';
     gift.isPaid = true;
-    gift.paymentId = data.paymentId;
+    gift.payment = data.payment;
+    gift.appointment = data.appointment
+    gift.timeline.push({
+        event: "Gift Accepted and Paid",
+        description: "Gift request was accepted and paid successfully",
+        tag: "gift-accepted"
+    });
     await gift.save();
     return gift;
 }
@@ -40,7 +64,16 @@ const rejectGift = async (giftId) => {
     if (!gift) {
         throw new Error('Gift not found');
     }
+
+    if(gift.status === 'declined'){
+        throw new Error("Cannot decline already declined gift")
+    }
     gift.status = 'declined';
+    gift.timeline.push({
+        event: "Gift Request Rejected",
+        description: "Gift request was rejected",
+        tag: "created"
+    })
     await gift.save();
     return gift;
 }
@@ -54,7 +87,7 @@ const getGiftDetails = async (giftId) => {
 }
 
 const getRequestedGifts = async (requesterId, page = 1, limit = 10, sort = "newest") => {
-    if(sort !== 'newest' && sort !== 'oldest'){
+    if (sort !== 'newest' && sort !== 'oldest') {
         throw new Error("Invalid sort parameter")
     }
     const skip = (page - 1) * limit;
@@ -75,8 +108,8 @@ const getRequestedGifts = async (requesterId, page = 1, limit = 10, sort = "newe
     };
 }
 
-const getRecievedGifts = async (receiverEmail, page = 1, limit = 10, sort="newest") => {
-    if(sort !== 'newest' && sort !== 'oldest'){
+const getRecievedGifts = async (receiverEmail, page = 1, limit = 10, sort = "newest") => {
+    if (sort !== 'newest' && sort !== 'oldest') {
         throw new Error("sort order can only be newest or oldest")
     }
     const skip = (page - 1) * limit;

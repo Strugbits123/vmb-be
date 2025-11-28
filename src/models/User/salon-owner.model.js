@@ -33,18 +33,30 @@ const salonOwnerSchema = new Schema({
     startTime: {
         type: String,
         required: [true, "Start time is required"],
-        trim: true,
+        validate: {
+            validator: function (value) {
+                if (!value) return true;
+                return /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i.test(value);
+            },
+            message: props => `${props.value} is not a valid time format (e.g., 09:30 PM)`
+        }
     },
     endTime: {
         type: String,
         required: [true, "End time is required"],
-        trim: true,
+        validate: {
+            validator: function (value) {
+                if (!value) return true;
+                return /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i.test(value);
+            },
+            message: props => `${props.value} is not a valid time format (e.g., 09:30 PM)`
+        }
     },
     workingDays: {
         type: [
             {
                 type: String,
-                enum: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+                enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
             },
         ],
         required: [true, "Working days are required"],

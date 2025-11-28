@@ -1,4 +1,5 @@
 const giftService = require("../services/gift.service");
+const appointmentService = require("../services/appointment.service")
 const { ErrorHandler,
     getValidationErrorMessage,
     SuccessHandler } = require("../utils/responseHandler");
@@ -27,6 +28,9 @@ const acceptGift = async (req, res) => {
         if (isValidGift.status === 'declined'){
             throw new Error('Cannot accept a declined gift');
         }
+        const appointment = await appointmentService.createAppointment(isValidGift, "gift")
+        console.log("appointment", appointment._id);
+        data.appointment = appointment._id
         const result = await giftService.acceptGift(giftId, data);
         return SuccessHandler("Gift accepted successfully", result, 200, res, req);
     } catch (error) {
@@ -63,7 +67,6 @@ const getRequestedGifts = async (req, res) => {
 const getRecievedGifts = async (req, res) => {
     try {
         const receiverEmail = req.user.email;
-        console.log("email", receiverEmail);
         
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;

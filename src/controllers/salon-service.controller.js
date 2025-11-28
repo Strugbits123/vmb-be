@@ -12,7 +12,6 @@ const createSalonService = async (req, res) => {
         return SuccessHandler("Salon service created successfully", result, 201, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
-        console.log("error", error);
         return ErrorHandler(message, 400, req, res);
     }
 };

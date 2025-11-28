@@ -25,9 +25,7 @@ const updateWallet = async (req, res) => {
         const updateData = req.body;
         const result = await walletService.updateWallet(wallet._id, updateData);
         return SuccessHandler("Wallet updated successfully", result, 200, res, req);
-    } catch (error) {
-        console.log("error", error);
-        
+    } catch (error) {        
         const message = getValidationErrorMessage(error);
         return ErrorHandler(message, 400, req, res);
     }

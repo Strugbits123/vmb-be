@@ -65,11 +65,19 @@ const userSchema = new Schema(
       type: Date,
       default: Date.now,
     },
+    phoneNumber: {
+      type: String,
+      default: "",
+      validator: (value) => {
+        if (value === "") return true;
+        return validator.isMobilePhone(value, "en-US");
+      }
+    },
     resetPasswordToken: {
       type: String,
     },
     resetPasswordExpire: {
-      type: Date, 
+      type: Date,
     }
   },
   {

@@ -50,7 +50,6 @@ const forgotPassword = async (req, res) => {
     try {
         if (!req.body || !req.body.email) throw new Error('Email is required');
         const { email } = req.body;
-        console.log("email", email);
 
         const result = await authService.forgotPassword(email);
         return SuccessHandler("Password reset email sent successfully", result, 200, res, req);
