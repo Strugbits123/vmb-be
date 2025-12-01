@@ -44,7 +44,7 @@ const login = async ({ email, password }) => {
   const isMatch = await user.comparePassword(password);
   if (!isMatch) throw new Error("Please enter a valid password");
 
-  if (user.status !== "approved")
+  if (user.status !== "approved" && user.status !== "hold")
     throw new Error(`User status is ${user.status}. Access denied.`);
 
   const token = user.getSignedJwtToken();
@@ -71,7 +71,8 @@ const forgotPassword = async (email) => {
     to: user.email,
     templateId: process.env.SENDGRID_FORGOT_PASSWORD_TEMPLATE_ID,
     templataData: {
-      reset_link: resetUrl,
+      name: user.name,
+      reset_url: resetUrl
     },
   });
 

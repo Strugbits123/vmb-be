@@ -9,7 +9,7 @@ const getPendingSalons = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        const sort = req.query.sort || 'newsest';
+        const sort = req.query.sort || 'newest';
 
         const result = await adminService.getPendingSalons(page, limit, sort);
         return SuccessHandler("Pending salons fetched successfully", result, 200, res, req);

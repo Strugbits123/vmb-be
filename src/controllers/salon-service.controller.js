@@ -12,7 +12,6 @@ const createSalonService = async (req, res) => {
         return SuccessHandler("Salon service created successfully", result, 201, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
-        console.log("error", error);
         return ErrorHandler(message, 400, req, res);
     }
 };
@@ -22,7 +21,8 @@ const getSalonServices = async (req, res) => {
         const salonId = req.user.id;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        const result = await salonService.getSalonServicesBySalonId(page, limit, salonId);
+        const sort = req.query.sort || 'newest'
+        const result = await salonService.getSalonServicesBySalonId(page, limit, salonId, sort);
         return SuccessHandler("Salon services fetched successfully", result, 200, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
