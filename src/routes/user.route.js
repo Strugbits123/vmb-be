@@ -8,6 +8,7 @@ router.get('/get-profile', protect(), userController.getProfile);
 router.get('/get-user-by-id/:id', protect('admin'), userController.getUserById);
 
 router.patch('/update-profile', protect(), userController.updateProfile);          
+router.patch('/update-salon-profile', protect("salon-owner"), userController.updateSalonProfile);          
 
 
 module.exports = router;

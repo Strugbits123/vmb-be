@@ -27,6 +27,18 @@ const updateProfile = async (req, res) => {
     }
 };
 
+const updateSalonProfile = async (req, res) => {
+    try {        
+        const userId = req.user.id;
+        const updateData = req.body;
+        const result = await userService.updateSalon(userId, updateData);
+        return SuccessHandler("Salon profile updated successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
+};
+
 const getUserById = async (req, res) => {
     try {
         const { id } = req.params
@@ -41,5 +53,6 @@ const getUserById = async (req, res) => {
 module.exports = {
     getProfile,
     getUserById,
-    updateProfile
+    updateProfile,
+    updateSalonProfile
 }
