@@ -29,8 +29,116 @@ const getAppointmentDetails = async (req, res) => {
     }
 }
 
+const requestAppointmentReschedule = async (req, res) => {
+    try {
+        const appointmentId = req.params.appointmentId;
+        const data = req.body || {};
+        const result = await appointmentService.requestAppointmentReschedule(data.reason, appointmentId);
+        return SuccessHandler("Reschedule request submitted successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res)
+    }
+}
 
-module.exports ={
+const holdAppointment = async (req, res) => {
+    try {
+        const appointmentId = req.params.appointmentId;
+        const result = await appointmentService.holdAppointment(appointmentId);
+        return SuccessHandler("Appointment placed on hold successfully.", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res)
+    }
+}
+
+const declineAppointment = async (req, res) => {
+    try {
+        const appointmentId = req.params.appointmentId;
+        const result = await appointmentService.declineAppointment(appointmentId);
+        return SuccessHandler("Appointment declined successfully.", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res)
+    }
+}
+
+const confirmAppointment = async (req, res) => {
+    try {
+        const appointmentId = req.params.appointmentId;
+        const result = await appointmentService.confirmAppointment(appointmentId);
+        return SuccessHandler("Appointment confrimed successfully.", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res)
+    }
+}
+
+const getUserAppointments = async (req, res) => {
+    try {
+        const id = req.user.id
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const sort = req.query.sort || 'newest'
+        const result = await appointmentService.getAppointments({
+            userId: id,
+            page,
+            limit,
+            sort
+        });
+        return SuccessHandler("Appointment fetched successfully.", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res)
+    }
+}
+
+const getSalonAppointments = async (req, res) => {
+    try {
+        const id = req.user.id
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const sort = req.query.sort || 'newest'
+        const result = await appointmentService.getAppointments({
+            salonId: id,
+            page,
+            limit,
+            sort
+        });
+        return SuccessHandler("Appointment fetched successfully.", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res)
+    }
+}
+
+const getAdminAppointments = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const sort = req.query.sort || 'newest'
+        const result = await appointmentService.getAppointments({
+            isAdmin: true,
+            page,
+            limit,
+            sort
+        });
+        return SuccessHandler("Appointment fetched successfully.", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res)
+    }
+}
+
+
+module.exports = {
     scheduleAppointment,
-    getAppointmentDetails
+    getAppointmentDetails,
+    requestAppointmentReschedule,
+    holdAppointment,
+    declineAppointment,
+    getUserAppointments,
+    getSalonAppointments,
+    getAdminAppointments,
+    confirmAppointment
 }

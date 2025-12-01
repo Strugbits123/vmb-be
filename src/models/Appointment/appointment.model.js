@@ -90,8 +90,12 @@ const appointmentSchema = new Schema({
     status: {
         type: String,
         required: [true, "Status is required"],
-        enum: ["pending", "scheduled", "reschedule-requested", "rescheduled", "hold", "confirmed", "declined"],
+        enum: ["pending", "scheduled", "reschedule-requested", "hold", "confirmed", "declined"],
         default: "pending"
+    },
+    reschduleReason: {
+        type: String,
+        default: ""
     },
     createdAt: {
         type: Date,

@@ -21,7 +21,8 @@ const getSalonServices = async (req, res) => {
         const salonId = req.user.id;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        const result = await salonService.getSalonServicesBySalonId(page, limit, salonId);
+        const sort = req.query.sort || 'newest'
+        const result = await salonService.getSalonServicesBySalonId(page, limit, salonId, sort);
         return SuccessHandler("Salon services fetched successfully", result, 200, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);

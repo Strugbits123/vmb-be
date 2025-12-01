@@ -8,9 +8,11 @@ const createSalonService = async (salonServiceData) => {
 
 const getSalonServicesBySalonId = async (page = 1, limit = 10, salonId) => {
     const skip = (page - 1) * limit;
+    const sortOrder = sort === "oldest" ? 1 : -1;
 
     const total = await Service.countDocuments({ salonId });
     const services = await Service.find({ salonId })
+        .sort({ updatedAt: sortOrder })
         .skip(skip)
         .limit(limit);
 
@@ -19,6 +21,7 @@ const getSalonServicesBySalonId = async (page = 1, limit = 10, salonId) => {
         total,
         page,
         pages: Math.ceil(total / limit),
+        sort: sort
     };
 }
 
