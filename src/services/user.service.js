@@ -9,10 +9,10 @@ const getUserById = async (userId) => {
 }
 
 const updateUser = async (userId, updateData) => {
-    if(!updateData || Object.keys(updateData).length === 0) {
+    if (!updateData || Object.keys(updateData).length === 0) {
         throw new Error('No data provided for update');
     }
-    
+
     const isValidUser = await getUserById(userId);
     if (!isValidUser) {
         throw new Error('User not found');
@@ -24,10 +24,10 @@ const updateUser = async (userId, updateData) => {
 }
 
 const updateSalon = async (userId, updateData) => {
-    if(!updateData || Object.keys(updateData).length === 0) {
+    if (!updateData || Object.keys(updateData).length === 0) {
         throw new Error('No data provided for update');
     }
-    
+
     const isValidUser = await getUserById(userId);
     if (!isValidUser) {
         throw new Error('User not found');
@@ -38,8 +38,39 @@ const updateSalon = async (userId, updateData) => {
     return salon;
 }
 
+const getAllSalons = async (page = 1, limit = 10, sort = "newest") => {
+    const skip = (page - 1) * limit;
+    const sortOrder = sort === "oldest" ? 1 : -1;
+
+    const filter = { role: "salon-owner", status: "approved" };
+
+    const total = await User.countDocuments(filter);
+
+    const salons = await User.find(filter)
+        .select("profilePic salonName description startTime endTime")
+        .sort({ updatedAt: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+    const salonsWithDistance = salons.map(salon => ({
+        ...salon,
+        distance: "5 miles away"
+    }));
+
+    return {
+        items: salonsWithDistance,
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+        sort
+    };
+};
+
+
 module.exports = {
     getUserById,
     updateUser,
-    updateSalon
+    updateSalon,
+    getAllSalons
 };

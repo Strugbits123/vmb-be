@@ -1,4 +1,4 @@
-const sendMail = require("../utils/sendMail");
+// const sendMail = require("../utils/sendMail");
 const User = require("../models/User/user.model");
 const Service = require("../models/Service/salon-service.model.js")
 const Appointment = require('../models/Appointment/appointment.model');
@@ -261,6 +261,7 @@ const getAppointments = async ({
     page = 1,
     limit = 10,
     sort = "newest" }) => {
+    console.log("admin", isAdmin);
 
     const skip = (page - 1) * limit;
     const sortOrder = sort === "oldest" ? 1 : -1;
@@ -275,7 +276,6 @@ const getAppointments = async ({
         query["Salon.id"] = salonId;
     }
 
-    console.log("query", query);
 
     const total = await Appointment.countDocuments(query);
 
