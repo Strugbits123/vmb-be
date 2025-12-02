@@ -16,7 +16,7 @@ const getProfile = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-    try {        
+    try {
         const userId = req.user.id;
         const updateData = req.body;
         const result = await userService.updateUser(userId, updateData);
@@ -28,7 +28,7 @@ const updateProfile = async (req, res) => {
 };
 
 const updateSalonProfile = async (req, res) => {
-    try {        
+    try {
         const userId = req.user.id;
         const updateData = req.body;
         const result = await userService.updateSalon(userId, updateData);
@@ -50,9 +50,23 @@ const getUserById = async (req, res) => {
     }
 };
 
+const getAllSalons = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const sort = req.query.sort || 'newest'
+        const result = await userService.getAllSalons(page, limit, sort);
+        return SuccessHandler("Requested gifts fetched successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
+}
+
 module.exports = {
     getProfile,
     getUserById,
     updateProfile,
-    updateSalonProfile
+    updateSalonProfile,
+    getAllSalons
 }

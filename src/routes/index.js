@@ -6,8 +6,10 @@ const salonService = require("./salon-service.route");
 const wallet = require("./wallet.route");
 const gift = require("./gift.route");
 const appointment = require("./appointment.route");
+const invite = require("./invite.route");
 
 router.use("/gift", gift);
+router.use("/invite", invite);
 router.use("/appointment", appointment);
 router.use("/admin", admin);
 router.use("/auth", auth);

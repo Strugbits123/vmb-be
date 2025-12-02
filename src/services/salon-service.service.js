@@ -6,7 +6,8 @@ const createSalonService = async (salonServiceData) => {
     return salonService;
 }
 
-const getSalonServicesBySalonId = async (page = 1, limit = 10, salonId) => {
+const getSalonServicesBySalonId = async (page = 1, limit = 10, salonId, sort) => {
+    
     const skip = (page - 1) * limit;
     const sortOrder = sort === "oldest" ? 1 : -1;
 
@@ -44,7 +45,7 @@ const deleteSalonService = async (serviceId) => {
     if (!isValidService) {
         throw new Error('Salon service not found');
     }
-    const service = await Service.findByIdAndDelete(serviceId);
+    await Service.findByIdAndDelete(serviceId);
     return {}
 }
 
