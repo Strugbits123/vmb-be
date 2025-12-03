@@ -21,7 +21,7 @@ const inviteSchema = new Schema({
             }, message: "Invitee email must be a valid email address",
         },
     },
-    service: {
+    services: {
         type: Schema.Types.ObjectId,
         ref: "SalonService",
         required: [true, "Service ID is required"]
@@ -45,8 +45,8 @@ const inviteSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    paymentId: {
-        type: String,
+    payment: {
+        type: Object,
         trim: true,
     },
     status: {

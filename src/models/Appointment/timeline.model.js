@@ -13,7 +13,7 @@ const timelineSchema = new Schema({
     tag: {
         type: String,
         required: [true, "Tag is required"], 
-        enum: ["gift-requested", "gift-accepted", "requested", "hold", "scheduled", "reschedule-requested", "accepted", "declined"]
+        enum: ["gift-requested", "gift-accepted", "requested", "hold", "scheduled", "invited", "reschedule-requested", "accepted", "declined"]
     },
     timestamp: {
         type: Date,

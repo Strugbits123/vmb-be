@@ -75,6 +75,78 @@ const createAppointment = async (data, type, startTime = null, appointmentDate =
     return appointment;
 };
 
+const createAndScheduleAppointmentForInvites = async (data, type, startTime, appointmentDate) => {
+    const { salonId, services, inviteeEmail } = data;
+
+    if (!services) {
+        throw new Error("Service must be selected");
+    }
+
+    const salon = await User.findById(salonId)
+        .select("salonName description profilePic startTime endTime workingDays")
+        .lean();
+
+    const user = await User.findOne({ email: inviteeEmail })
+        .select("_id")
+        .lean();
+
+    if (!salon) {
+        throw new Error("No Salon Found");
+    }
+
+    if (!user) {
+        throw new Error("Unable to get details of the user to which invite was sent");
+    }
+
+    const serviceInfo = await Service.findById(services)
+        .select("serviceName servicePrice serviceDuration")
+        .lean();
+
+    if (!serviceInfo) {
+        throw new Error("Selected service is invalid");
+    }
+
+    if (!startTime || !appointmentDate) {
+        throw new Error("Start time and appointment date are required to schedule an appointment");
+    }
+
+    const isValid = await validateSalonOperatingHours(appointmentDate, startTime, salon);
+    if (!isValid) return;
+
+    const obj = {};
+
+    obj.Salon = {
+        id: salonId,
+        name: salon.salonName,
+        description: salon.description,
+        image: salon.profilePic
+    };
+
+    obj.RequestedBy = user._id;
+    obj.RequestedFrom = salonId;
+    obj.sourceType = type;
+    obj.startTime = startTime;
+    obj.appointmentDate = appointmentDate;
+    obj.status = "scheduled"
+
+    obj.services = [{
+        serviceId: serviceInfo._id,
+        name: serviceInfo.serviceName,
+        price: serviceInfo.servicePrice,
+        duration: serviceInfo.serviceDuration
+    }];
+
+    obj.timeline = [{
+        event: "Appointment Created",
+        description: "Appointment was created successfully",
+        tag: "scheduled"
+    }];
+
+    const appointment = new Appointment(obj);
+    await appointment.save();
+    return appointment;
+};
+
 
 const scheduleAppointment = async (data, id) => {
     const { startTime, appointmentDate } = data;
@@ -325,5 +397,6 @@ module.exports = {
     holdAppointment,
     declineAppointment,
     getAppointments,
-    confirmAppointment
+    confirmAppointment,
+    createAndScheduleAppointmentForInvites
 }

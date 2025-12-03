@@ -5,6 +5,7 @@ const Timeline = require("./timeline.model");
 
 
 const appointmentSchema = new Schema({
+    // user who created the request
     RequestedBy: {
         type: Schema.Types.ObjectId,
         ref: "user",

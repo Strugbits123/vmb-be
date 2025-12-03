@@ -1,0 +1,18 @@
+const cron = require("node-cron");
+const { cleanOldLogs, logger } = require("./logger");
+const { markInviteAsUnClaimed } = require("../services/invite.service")
+
+const setupSchedulers = () => {
+
+    cron.schedule('1 2 * * *', () => {
+        logger.info('Running scheduled log cleanup');
+        cleanOldLogs();
+    });
+    
+    cron.schedule('5 2 * * *', () => {
+        logger.info('Running scheduler to mark invite as unclaimed where created date is passed 7 days');
+        markInviteAsUnClaimed();
+    });
+}
+
+module.exports = { setupSchedulers };

@@ -7,7 +7,7 @@ const Timeline = require("../Appointment/timeline.model");
 const giftSchema = new Schema({
     requesterId: {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: "user",
         required: [true, "Requester ID is required"],
         immutable: true,
     },
@@ -40,7 +40,7 @@ const giftSchema = new Schema({
     },
     salonId: {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: "user",
         required: [true, "Salon ID is required"],
     },
     message: {

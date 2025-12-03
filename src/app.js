@@ -1,14 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const router = require("./routes/index");
-const utils = require("./utils/util");
+const cron = require("./utils/cron-schedulers");
 const cookieParser = require('cookie-parser');
 const { ErrorHandler } = require("./utils/responseHandler");
 
 
 const app = express();
-
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,7 +27,7 @@ app.get("/", (req, res) => {
     res.send("VMB Server is running");
 });
 
-utils.setupSchedulers();
+cron.setupSchedulers();
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {

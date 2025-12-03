@@ -18,7 +18,8 @@ const createSalonService = async (req, res) => {
 
 const getSalonServices = async (req, res) => {
     try {
-        const salonId = req.user.id;
+        // const salonId = req.user.id;
+        const salonId = req.params.id || req.user.id;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || 'newest'
