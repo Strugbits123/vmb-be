@@ -9,6 +9,8 @@ router.patch('/reject-gift/:giftId', protect(), giftController.rejectGift);
 
 router.get('/requested-gifts', protect(), giftController.getRequestedGifts);
 router.get('/recieved-gifts', protect(), giftController.getRecievedGifts);
+router.get('/get-all-gifts', protect("admin"), giftController.getAllGiftsForAdmin);
+
 router.get('/gift-details/:giftId', protect(), giftController.getGiftDetails);
 
 module.exports = router;

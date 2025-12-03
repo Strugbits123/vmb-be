@@ -9,7 +9,7 @@ const createGift = async (obj) => {
 
     const salon = await User.findById(salonId)
 
-    if(!salon){
+    if (!salon) {
         throw new Error("Please provide a valid salon")
     }
 
@@ -43,7 +43,7 @@ const acceptGift = async (giftId, data) => {
         throw new Error('Gift not found');
     }
 
-    if(gift.status === 'accepted'){
+    if (gift.status === 'accepted') {
         throw new Error("Cannot accept already accepted gift")
     }
     gift.status = 'accepted';
@@ -65,7 +65,7 @@ const rejectGift = async (giftId) => {
         throw new Error('Gift not found');
     }
 
-    if(gift.status === 'declined'){
+    if (gift.status === 'declined') {
         throw new Error("Cannot decline already declined gift")
     }
     gift.status = 'declined';
@@ -86,55 +86,50 @@ const getGiftDetails = async (giftId) => {
     return gift;
 }
 
-const getRequestedGifts = async (requesterId, page = 1, limit = 10, sort = "newest") => {
-    if (sort !== 'newest' && sort !== 'oldest') {
-        throw new Error("Invalid sort parameter")
+const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, sort = "newest" }) => {
+    if (!["newest", "oldest"].includes(sort)) {
+        throw new Error("Invalid sort parameter: must be 'newest' or 'oldest'");
     }
+
     const skip = (page - 1) * limit;
     const sortOrder = sort === "oldest" ? 1 : -1;
 
-    const total = await Gift.countDocuments({ requesterId });
-    const gifts = await Gift.find({ requesterId })
+    const filter = {};
+    if (requesterId) filter.requesterId = requesterId;
+    if (receiverEmail) filter.receiverEmail = receiverEmail;
+
+    const total = await Gift.countDocuments(filter);
+    const items = await Gift.find(filter)
+        .populate({
+            path: "services",
+            select: "serviceName servicePrice",
+        })
+        .populate({
+            path: "salonId",
+            select: "salonName profilePic email",
+        })
+        .populate({
+            path: "requesterId",
+            select: "name email",
+        })
         .sort({ createdAt: sortOrder })
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .lean();
 
     return {
-        items: gifts,
+        items,
         total,
         page,
         pages: Math.ceil(total / limit),
-        sort: sort
+        sort,
     };
-}
-
-const getRecievedGifts = async (receiverEmail, page = 1, limit = 10, sort = "newest") => {
-    if (sort !== 'newest' && sort !== 'oldest') {
-        throw new Error("sort order can only be newest or oldest")
-    }
-    const skip = (page - 1) * limit;
-    const sortOrder = sort === "oldest" ? 1 : -1;
-
-    const total = await Gift.countDocuments({ receiverEmail });
-    const gifts = await Gift.find({ receiverEmail })
-        .sort({ createdAt: sortOrder })
-        .skip(skip)
-        .limit(limit);
-
-    return {
-        items: gifts,
-        total,
-        page,
-        pages: Math.ceil(total / limit),
-        sort: sort
-    };
-}
+};
 
 module.exports = {
     createGift,
     acceptGift,
     rejectGift,
     getGiftDetails,
-    getRequestedGifts,
-    getRecievedGifts
+    fetchGifts
 };

@@ -1,6 +1,4 @@
-const cron = require("node-cron");
 const moment = require("moment");
-const { cleanOldLogs, logger } = require("./logger");
 
 const setAuthCookie = (res, token) => {
     const cookieOptions = {
@@ -11,15 +9,6 @@ const setAuthCookie = (res, token) => {
     };
 
     res.cookie("jwt", token, cookieOptions);
-}
-
-const setupSchedulers = () => {
-
-    // Schedule log cleanup every day
-    cron.schedule('1 2 * * *', () => {
-        logger.info('Running scheduled log cleanup');
-        cleanOldLogs();
-    });
 }
 
 const convertToMinutes = (timeStr) => {
@@ -46,6 +35,17 @@ function validateSalonOperatingHours(appointmentDate, startTime, salon) {
 
     const { workingDays, startTime: salonStart, endTime: salonEnd } = salon;
 
+    const today = moment().startOf("day");
+    const apptDate = moment(appointmentDate).startOf("day");
+
+    if (!apptDate.isValid()) {
+        throw new Error("Invalid appointment date");
+    }
+
+    if (apptDate.isBefore(today)) {
+        throw new Error("Appointment date cannot be in the past");
+    }
+
     if (!workingDays || !salonStart || !salonEnd) {
         throw new Error("Salon working hours are not configured");
     }
@@ -65,7 +65,7 @@ function validateSalonOperatingHours(appointmentDate, startTime, salon) {
 
     if (
         userStart.isBefore(salonStartTime) ||
-        userStart.isSameOrAfter(salonEndTime)  
+        userStart.isSameOrAfter(salonEndTime)
     ) {
         throw new Error(
             `Appointment start time must be between ${salonStart} and ${salonEnd}.`
@@ -75,8 +75,4 @@ function validateSalonOperatingHours(appointmentDate, startTime, salon) {
     return true;
 }
 
-module.exports = validateSalonOperatingHours;
-
-
-
-module.exports = { setAuthCookie, setupSchedulers, convertToMinutes, validateSalonOperatingHours };
+module.exports = { setAuthCookie, convertToMinutes, validateSalonOperatingHours };

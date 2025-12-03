@@ -1,5 +1,6 @@
 const User = require("../models/User/user.model");
 const Salon = require("../models/User/salon-owner.model");
+const SalonService = require("../models/Service/salon-service.model")
 
 
 const getUserById = async (userId) => {
@@ -41,29 +42,38 @@ const updateSalon = async (userId, updateData) => {
 const getAllSalons = async (page = 1, limit = 10, sort = "newest") => {
     const skip = (page - 1) * limit;
     const sortOrder = sort === "oldest" ? 1 : -1;
-
     const filter = { role: "salon-owner", status: "approved" };
-
     const total = await User.countDocuments(filter);
-
     const salons = await User.find(filter)
-        .select("profilePic salonName description startTime endTime")
+        .select(
+            "profilePic salonName description startTime endTime salonPhotos workingDays salonZipcode salonAddress phoneNumber"
+        )
         .sort({ updatedAt: sortOrder })
         .skip(skip)
         .limit(limit)
         .lean();
-
-    const salonsWithDistance = salons.map(salon => ({
+    const salonIds = salons.map((s) => s._id);
+    const allServices = await SalonService.find({
+        salonId: { $in: salonIds },
+    }).lean();
+    const servicesBySalon = {};
+    allServices.forEach((service) => {
+        if (!servicesBySalon[service.salonId]) {
+            servicesBySalon[service.salonId] = [];
+        }
+        servicesBySalon[service.salonId].push(service);
+    });
+    const salonsWithExtras = salons.map((salon) => ({
         ...salon,
-        distance: "5 miles away"
+        distance: "5 miles away",
+        services: servicesBySalon[salon._id] || [],
     }));
-
     return {
-        items: salonsWithDistance,
-        total,
+        items: salonsWithExtras,
+        total: total,
         page,
         pages: Math.ceil(total / limit),
-        sort
+        sort,
     };
 };
 
