@@ -55,8 +55,9 @@ const getRequestedGifts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || "newest";
+        const search = req.query.search || "";
 
-        const result = await giftService.fetchGifts({ requesterId, page, limit, sort });
+        const result = await giftService.fetchGifts({ requesterId, page, limit, sort, search });
         return SuccessHandler("Requested gifts fetched successfully", result, 200, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
@@ -70,8 +71,9 @@ const getRecievedGifts = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || "newest";
+        const search = req.query.search || "";
 
-        const result = await giftService.fetchGifts({ receiverEmail, page, limit, sort });
+        const result = await giftService.fetchGifts({ receiverEmail, page, limit, sort, search });
         return SuccessHandler("Received gifts fetched successfully", result, 200, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);
@@ -84,8 +86,9 @@ const getAllGiftsForAdmin = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || "newest";
+        const search = req.query.search || "";
 
-        const result = await giftService.fetchGifts({ page, limit, sort });
+        const result = await giftService.fetchGifts({ page, limit, sort, search });
         return SuccessHandler("All gifts fetched successfully", result, 200, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);

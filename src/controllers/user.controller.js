@@ -15,6 +15,17 @@ const getProfile = async (req, res) => {
     }
 };
 
+const getSalonById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await userService.getSalonById(id);
+    return SuccessHandler("Salon fetched successfully", result, 200, res, req);
+  } catch (error) {
+    const message = getValidationErrorMessage(error);
+    return ErrorHandler(message, 400, req, res);
+  }
+};
+
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -63,10 +74,23 @@ const getAllSalons = async (req, res) => {
     }
 }
 
+const getSalonDailyStats = async (req, res) => {
+    try {
+        const id = req.user.id
+        const result = await userService.getSalonDailyStats(id)
+        return SuccessHandler("Details fetched successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
+}
+
 module.exports = {
     getProfile,
     getUserById,
     updateProfile,
     updateSalonProfile,
-    getAllSalons
+    getAllSalons,
+    getSalonById,
+    getSalonDailyStats
 }

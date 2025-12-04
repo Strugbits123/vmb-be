@@ -76,6 +76,16 @@ const userSchema = new Schema(
     resetPasswordToken: {
       type: String,
     },
+    userProfile: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function (value) {
+          return validator.isURL(value, { protocols: ['http', 'https'], require_protocol: false });
+        },
+        message: "Image must be a valid URL",
+      },
+    },
     resetPasswordExpire: {
       type: Date,
     }

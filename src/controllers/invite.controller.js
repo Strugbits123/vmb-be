@@ -46,7 +46,7 @@ const acceptInvite = async (req, res) => {
         }
 
         console.log("invite", isValidInvite);
-        const appointment = await appointmentService.createAndScheduleAppointmentForInvites(isValidInvite, "invite", data.startTime, data.appointmentDate)
+        const appointment = await appointmentService.createAndScheduleAppointment(isValidInvite, "invite", data.startTime, data.appointmentDate)
 
         data.appointment = appointment._id
         const result = await inviteService.acceptInvite(inviteId, data)
@@ -66,11 +66,15 @@ const getUserInvites = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || 'newest'
+        const search = req.query.search || "";
+        const status = req.query.status || "";
         const result = await inviteService.getInvites({
             userId: id,
             page,
             limit,
-            sort
+            sort,
+            search,
+            status
         });
         return SuccessHandler("Invites fetched successfully.", result, 200, res, req);
     } catch (error) {
@@ -85,11 +89,15 @@ const getSalonInvites = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || 'newest'
+        const search = req.query.search || "";
+        const status = req.query.status || "";
         const result = await inviteService.getInvites({
             salonId: id,
             page,
             limit,
-            sort
+            sort,
+            search,
+            status
         });
         return SuccessHandler("Invites fetched successfully.", result, 200, res, req);
     } catch (error) {
@@ -103,11 +111,15 @@ const getAdminInvites = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || 'newest'
+        const search = req.query.search || "";
+        const status = req.query.status || "";
         const result = await inviteService.getInvites({
             isAdmin: true,
             page,
             limit,
-            sort
+            sort,
+            search,
+            status
         });
         return SuccessHandler("Invites fetched successfully.", result, 200, res, req);
     } catch (error) {

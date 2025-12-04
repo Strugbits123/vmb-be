@@ -140,58 +140,171 @@ const getFullInviteDetails = async (id) => {
     };
 }
 
+// const getInvites = async ({
+//     userId = null,
+//     salonId = null,
+//     isAdmin = false,
+//     page = 1,
+//     limit = 10,
+//     sort = "newest"
+// }) => {
+
+//     const skip = (page - 1) * limit;
+//     const sortOrder = sort === "oldest" ? 1 : -1;
+
+//     const query = {};
+
+//     if (userId) {
+//         query["inviteeEmail"] = userId;
+//     }
+
+//     if (salonId) {
+//         query["salonId"] = salonId;
+//     }
+
+//     const total = await Invite.countDocuments(query);
+
+//     const invites = await Invite.find(query)
+//         .select({
+//             discountPercentage: 1,
+//             status: 1,
+//             message: 1,
+//             createdAt: 1,
+//             inviteeEmail: 1,
+//             salonId: 1,
+//             services: 1,
+//         })
+//         .populate({
+//             path: "salonId",
+//             select: "email salonName",
+//         })
+//         .populate({
+//             path: "services",
+//             select: "serviceName",
+//         })
+//         .sort({ updatedAt: sortOrder })
+//         .skip(skip)
+//         .limit(limit)
+//         .lean()
+
+//     const items = invites.map((a) => {
+//         const salon = a.salonId;
+//         const created = moment(a.createdAt);
+//         const expiresOn = created.clone().add(7, "days");
+
+
+//         return {
+//             _id: a._id,
+//             salonName: salon?.salonName || "",
+//             salonEmail: salon?.email || "",
+//             status: a.status,
+//             discountPercentage: a.discountPercentage,
+//             inviteeEmail: a.inviteeEmail,
+//             message: a.message || "",
+//             services: a.services?.serviceName || "",
+//             createdAt: created.format("YYYY-MM-DD"),
+//             expiresOn: expiresOn.format("YYYY-MM-DD"),
+//         };
+//     });
+
+//     return {
+//         items,
+//         total,
+//         page,
+//         pages: Math.ceil(total / limit),
+//         sort,
+//     };
+// };
+
 const getInvites = async ({
     userId = null,
     salonId = null,
     isAdmin = false,
     page = 1,
     limit = 10,
-    sort = "newest"
+    sort = "newest",
+    search = "",
+    status = "" 
 }) => {
-
     const skip = (page - 1) * limit;
     const sortOrder = sort === "oldest" ? 1 : -1;
+    const searchTerm = (search || "").trim();
+    const statusFilter = (status || "").trim();
 
     const query = {};
 
-    if (userId) {
-        query["inviteeEmail"] = userId;
+    if (userId) query["inviteeEmail"] = userId;
+    if (salonId) query["salonId"] = salonId;
+
+    if (statusFilter !== "") {
+        query.status = statusFilter;
     }
 
-    if (salonId) {
-        query["salonId"] = salonId;
+    if (searchTerm !== "") {
+        const regex = new RegExp(searchTerm, "i");
+        
+        const [matchingServices, matchingSalons] = await Promise.all([
+            Service.find({ serviceName: regex }).select("_id").lean(),
+            User.find({ 
+                $or: [
+                    { salonName: regex },
+                    { email: regex }
+                ]
+            }).select("_id").lean()
+        ]);
+
+        const serviceIds = matchingServices.map(s => s._id);
+        const salonIds = matchingSalons.map(s => s._id);
+
+        query.$or = [
+            { inviteeEmail: regex },
+            ...(serviceIds.length > 0 ? [{ services: { $in: serviceIds } }] : []),
+            ...(salonIds.length > 0 ? [{ salonId: { $in: salonIds } }] : [])
+        ];
+
+        if (query.$or.length === 0) {
+            return {
+                items: [],
+                total: 0,
+                page,
+                pages: 0,
+                sort,
+                search,
+                status: statusFilter || 'all'
+            };
+        }
     }
 
-    const total = await Invite.countDocuments(query);
-
-    const invites = await Invite.find(query)
-        .select({
-            discountPercentage: 1,
-            status: 1,
-            message: 1,
-            createdAt: 1,
-            inviteeEmail: 1,
-            salonId: 1,
-            services: 1,
-        })
-        .populate({
-            path: "salonId",
-            select: "email salonName",
-        })
-        .populate({
-            path: "services",
-            select: "serviceName",
-        })
-        .sort({ updatedAt: sortOrder })
-        .skip(skip)
-        .limit(limit)
-        .lean()
+    const [total, invites] = await Promise.all([
+        Invite.countDocuments(query),
+        Invite.find(query)
+            .select({
+                discountPercentage: 1,
+                status: 1,
+                message: 1,
+                createdAt: 1,
+                inviteeEmail: 1,
+                salonId: 1,
+                services: 1,
+            })
+            .populate({
+                path: "salonId",
+                select: "email salonName",
+            })
+            .populate({
+                path: "services",
+                select: "serviceName",
+            })
+            .sort({ updatedAt: sortOrder })
+            .skip(skip)
+            .limit(limit)
+            .lean()
+    ]);
 
     const items = invites.map((a) => {
         const salon = a.salonId;
         const created = moment(a.createdAt);
         const expiresOn = created.clone().add(7, "days");
-
 
         return {
             _id: a._id,
@@ -201,7 +314,7 @@ const getInvites = async ({
             discountPercentage: a.discountPercentage,
             inviteeEmail: a.inviteeEmail,
             message: a.message || "",
-            services: a.services?.serviceName || "",
+            services: a.services.serviceName || "", 
             createdAt: created.format("YYYY-MM-DD"),
             expiresOn: expiresOn.format("YYYY-MM-DD"),
         };
@@ -213,10 +326,10 @@ const getInvites = async ({
         page,
         pages: Math.ceil(total / limit),
         sort,
+        search,
+        status: statusFilter || 'all' 
     };
 };
-
-
 
 module.exports = {
     createInvite,

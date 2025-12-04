@@ -59,7 +59,7 @@ const appointmentSchema = new Schema({
     },
     sourceType: {
         type: String,
-        enum: ['direct', 'gift', 'invite'],
+        enum: ['booking', 'gift', 'invite'],
         required: [true, "source is required"]
     },
     timeline: {
@@ -97,6 +97,10 @@ const appointmentSchema = new Schema({
     reschduleReason: {
         type: String,
         default: ""
+    },
+     metaData: {
+        type: Object,
+        default: {}
     },
     createdAt: {
         type: Date,
