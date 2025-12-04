@@ -4,6 +4,19 @@ const { ErrorHandler,
     SuccessHandler } = require("../utils/responseHandler");
 
 
+const createAppointment = async (req, res) => {
+    try {
+
+        const data = req.body || {};
+        data.inviteeEmail = req.user.email
+        const result = await appointmentService.createAndScheduleAppointment(data, "booking", data.startTime, data.appointmentDate, data.payment);
+        return SuccessHandler("Appointment scheduled successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
+}
+
 const scheduleAppointment = async (req, res) => {
     try {
 
@@ -80,11 +93,15 @@ const getUserAppointments = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || 'newest'
+        const search = req.query.search || "";
+        const status = req.query.status || "";
         const result = await appointmentService.getAppointments({
             userId: id,
             page,
             limit,
-            sort
+            sort,
+            search,
+            status
         });
         return SuccessHandler("Appointment fetched successfully.", result, 200, res, req);
     } catch (error) {
@@ -99,11 +116,15 @@ const getSalonAppointments = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || 'newest'
+        const search = req.query.search || "";
+        const status = req.query.status || "";
         const result = await appointmentService.getAppointments({
             salonId: id,
             page,
             limit,
-            sort
+            sort,
+            search,
+            status
         });
         return SuccessHandler("Appointment fetched successfully.", result, 200, res, req);
     } catch (error) {
@@ -117,11 +138,15 @@ const getAdminAppointments = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const sort = req.query.sort || 'newest'
+        const search = req.query.search || "";
+        const status = req.query.status || "";
         const result = await appointmentService.getAppointments({
             isAdmin: true,
             page,
             limit,
-            sort
+            sort,
+            search,
+            status
         });
         return SuccessHandler("Appointment fetched successfully.", result, 200, res, req);
     } catch (error) {
@@ -140,5 +165,6 @@ module.exports = {
     getUserAppointments,
     getSalonAppointments,
     getAdminAppointments,
-    confirmAppointment
+    confirmAppointment,
+    createAppointment
 }

@@ -19,6 +19,22 @@ const getPendingSalons = async (req, res) => {
     }
 };
 
+const getAllSalons = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const sort = req.query.sort || 'newest';
+        const search = req.query.search || '';
+        const status = req.query.status || '';
+
+        const result = await adminService.getAllSalons(page, limit, sort, search, status);
+        return SuccessHandler("Salons fetched successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
+};
+
 
 const approveSalon = async (req, res) => {
     try {
@@ -45,7 +61,7 @@ const rejectSalon = async (req, res) => {
 
 const holdSalon = async (req, res) => {
     try {
-        if(!req.body || !req.body.reason) throw new Error('Hold reason is required');
+        if (!req.body || !req.body.reason) throw new Error('Hold reason is required');
         const { salonId } = req.params;
         const { reason } = req.body;
         const result = await adminService.holdSalon(salonId, reason);
@@ -56,9 +72,21 @@ const holdSalon = async (req, res) => {
     }
 };
 
+const getWeeklyStats = async (req, res) => {
+    try {
+        const result = await adminService.getWeeklyStats()
+        return SuccessHandler("Details fetched successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
+}
+
 module.exports = {
     getPendingSalons,
+    getAllSalons,
     approveSalon,
     rejectSalon,
-    holdSalon
+    holdSalon,
+    getWeeklyStats
 }

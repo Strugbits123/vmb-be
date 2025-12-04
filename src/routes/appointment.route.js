@@ -3,6 +3,8 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const appointmentController = require('../controllers/appointment.controller');
 
+router.post("/create-appointment/", protect("customer"), appointmentController.createAppointment)
+
 router.get("/get-appointment-details/:appointmentId", protect(), appointmentController.getAppointmentDetails)
 router.get("/get-user-appointment/", protect("customer"), appointmentController.getUserAppointments)
 router.get("/get-salon-appointment/", protect("salon-owner"), appointmentController.getSalonAppointments)

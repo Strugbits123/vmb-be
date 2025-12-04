@@ -1,4 +1,6 @@
 const sendMail = require("../utils/sendMail");
+const mongoose = require("mongoose");
+const moment = require("moment");
 const Gift = require("../models/Gift/gift.model");
 const Service = require('../models/Service/salon-service.model');
 const User = require('../models/User/user.model');
@@ -72,7 +74,7 @@ const rejectGift = async (giftId) => {
     gift.timeline.push({
         event: "Gift Request Rejected",
         description: "Gift request was rejected",
-        tag: "created"
+        tag: "declined"
     })
     await gift.save();
     return gift;
@@ -86,7 +88,48 @@ const getGiftDetails = async (giftId) => {
     return gift;
 }
 
-const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, sort = "newest" }) => {
+// const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, sort = "newest" }) => {
+//     if (!["newest", "oldest"].includes(sort)) {
+//         throw new Error("Invalid sort parameter: must be 'newest' or 'oldest'");
+//     }
+
+//     const skip = (page - 1) * limit;
+//     const sortOrder = sort === "oldest" ? 1 : -1;
+
+//     const filter = {};
+//     if (requesterId) filter.requesterId = requesterId;
+//     if (receiverEmail) filter.receiverEmail = receiverEmail;
+
+//     const total = await Gift.countDocuments(filter);
+//     const items = await Gift.find(filter)
+//         .populate({
+//             path: "services",
+//             select: "serviceName servicePrice serviceDuration",
+//         })
+//         .populate({
+//             path: "salonId",
+//             select: "salonName profilePic email description ",
+//         })
+//         .populate({
+//             path: "requesterId",
+//             select: "name email",
+//         })
+//         .sort({ createdAt: sortOrder })
+//         .skip(skip)
+//         .limit(limit)
+//         .lean();
+
+//     return {
+//         items,
+//         total,
+//         page,
+//         pages: Math.ceil(total / limit),
+//         sort,
+//     };
+// };
+
+
+const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, sort = "newest", search = "" }) => {
     if (!["newest", "oldest"].includes(sort)) {
         throw new Error("Invalid sort parameter: must be 'newest' or 'oldest'");
     }
@@ -95,27 +138,53 @@ const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, so
     const sortOrder = sort === "oldest" ? 1 : -1;
 
     const filter = {};
-    if (requesterId) filter.requesterId = requesterId;
+    if (requesterId) filter.requesterId = new mongoose.Types.ObjectId(requesterId);
     if (receiverEmail) filter.receiverEmail = receiverEmail;
 
-    const total = await Gift.countDocuments(filter);
-    const items = await Gift.find(filter)
-        .populate({
-            path: "services",
-            select: "serviceName servicePrice",
-        })
-        .populate({
-            path: "salonId",
-            select: "salonName profilePic email",
-        })
-        .populate({
-            path: "requesterId",
-            select: "name email",
-        })
-        .sort({ createdAt: sortOrder })
-        .skip(skip)
-        .limit(limit)
-        .lean();
+    // If search is provided, find matching IDs first
+    if (search && search.trim()) {
+        const searchRegex = new RegExp(search.trim(), "i");
+        
+        const [matchingServices, matchingSalons, matchingRequesters] = await Promise.all([
+            Service.find({ serviceName: searchRegex }).select("_id").lean(),
+            User.find({ $or: [{ salonName: searchRegex }, { email: searchRegex }] }).select("_id").lean(),
+            User.find({ email: searchRegex }).select("_id").lean()
+        ]);
+
+        const serviceIds = matchingServices.map(s => s._id);
+        const salonIds = matchingSalons.map(s => s._id);
+        const requesterIds = matchingRequesters.map(r => r._id);
+
+        filter.$or = [
+            { receiverEmail: searchRegex },
+            ...(serviceIds.length > 0 ? [{ services: { $in: serviceIds } }] : []),
+            ...(salonIds.length > 0 ? [{ salonId: { $in: salonIds } }] : []),
+            ...(requesterIds.length > 0 ? [{ requesterId: { $in: requesterIds } }] : [])
+        ];
+
+        if (filter.$or.length === 0) {
+            return {
+                items: [],
+                total: 0,
+                page,
+                pages: 0,
+                sort,
+                search
+            };
+        }
+    }
+
+    const [total, items] = await Promise.all([
+        Gift.countDocuments(filter),
+        Gift.find(filter)
+            .populate("services", "serviceName servicePrice serviceDuration")
+            .populate("salonId", "salonName profilePic email description")
+            .populate("requesterId", "name email")
+            .sort({ createdAt: sortOrder })
+            .skip(skip)
+            .limit(limit)
+            .lean()
+    ]);
 
     return {
         items,
@@ -123,8 +192,10 @@ const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, so
         page,
         pages: Math.ceil(total / limit),
         sort,
+        search
     };
 };
+
 
 module.exports = {
     createGift,

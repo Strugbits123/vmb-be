@@ -1,4 +1,5 @@
 // const sendMail = require("../utils/sendMail");
+const mongoose = require("mongoose")
 const User = require("../models/User/user.model");
 const Service = require("../models/Service/salon-service.model.js")
 const Appointment = require('../models/Appointment/appointment.model');
@@ -75,8 +76,12 @@ const createAppointment = async (data, type, startTime = null, appointmentDate =
     return appointment;
 };
 
-const createAndScheduleAppointmentForInvites = async (data, type, startTime, appointmentDate) => {
+const createAndScheduleAppointment = async (data, type, startTime, appointmentDate, payment = null) => {
     const { salonId, services, inviteeEmail } = data;
+
+    if (type === 'booking' && !payment) {
+        throw new Error("Payment Info is required to create an appointment")
+    }
 
     if (!services) {
         throw new Error("Service must be selected");
@@ -326,68 +331,180 @@ const confirmAppointment = async (id) => {
     return appointment;
 }
 
+// const getAppointments = async ({
+//     userId = null,
+//     salonId = null,
+//     isAdmin = false,
+//     page = 1,
+//     limit = 10,
+//     sort = "newest",
+//     search = "" }) => {
+//     console.log("admin", isAdmin);
+
+//     const skip = (page - 1) * limit;
+//     const sortOrder = sort === "oldest" ? 1 : -1;
+
+//     const query = {};
+
+//     if (userId) {
+//         query["RequestedBy"] = userId;
+//     }
+
+//     if (salonId) {
+//         query["Salon.id"] = salonId;
+//     }
+
+
+//     const total = await Appointment.countDocuments(query);
+
+//     const appointments = await Appointment.find(query)
+//         .select({
+//             "Salon.name": 1,
+//             "Salon.image": 1,
+//             status: 1,
+//             services: 1,
+//             appointmentDate: 1,
+//             startTime: 1,
+//             RequestedBy: 1,
+//             RequestedFrom: 1,
+//             sourceType: 1
+//         })
+//         .populate("RequestedBy", "email")
+//         .populate("RequestedFrom", "email")
+//         .sort({ updatedAt: sortOrder })
+//         .skip(skip)
+//         .limit(limit)
+//         .lean()
+
+//     const items = appointments.map(a => ({
+//         salonName: a.Salon?.name || "",
+//         salonImage: a.Salon?.image || "",
+//         status: a.status,
+//         requestedByEmail: a.RequestedBy?.email || "",
+//         requestedFromEmail: a.RequestedFrom?.email || "",
+//         services: a.services.map(s => s.name),
+//         appointmentDate: a.appointmentDate,
+//         startTime: a.startTime,
+//         type: a.sourceType
+//     }));
+
+//     return {
+//         items,
+//         total,
+//         page,
+//         pages: Math.ceil(total / limit),
+//         sort
+//     };
+// };
+
 const getAppointments = async ({
     userId = null,
     salonId = null,
     isAdmin = false,
     page = 1,
     limit = 10,
-    sort = "newest" }) => {
-    console.log("admin", isAdmin);
-
+    sort = "newest",
+    search = "",
+    status = ""
+}) => {
     const skip = (page - 1) * limit;
     const sortOrder = sort === "oldest" ? 1 : -1;
+    const searchTerm = (search || "").trim();
 
-    const query = {};
+    // Build base match
+    const match = {};
+    if (userId) match["RequestedBy"] = new mongoose.Types.ObjectId(userId);
+    if (salonId) match["Salon.id"] = new mongoose.Types.ObjectId(salonId);
 
-    if (userId) {
-        query["RequestedBy"] = userId;
+    if (status && status.trim() !== "") match["status"] = status;
+
+
+    const pipeline = [
+        { $match: match },
+
+        // Lookup RequestedBy
+        {
+            $lookup: {
+                from: "users", // exact MongoDB collection name
+                localField: "RequestedBy",
+                foreignField: "_id",
+                as: "requestedBy"
+            }
+        },
+        { $unwind: { path: "$requestedBy", preserveNullAndEmptyArrays: true } },
+
+        // Lookup RequestedFrom
+        {
+            $lookup: {
+                from: "users",
+                localField: "RequestedFrom",
+                foreignField: "_id",
+                as: "requestedFrom"
+            }
+        },
+        { $unwind: { path: "$requestedFrom", preserveNullAndEmptyArrays: true } },
+
+        // Create safe fields for search
+        {
+            $addFields: {
+                requestedByEmailSafe: { $ifNull: ["$requestedBy.email", ""] },
+                requestedFromEmailSafe: { $ifNull: ["$requestedFrom.email", ""] },
+                salonNameSafe: { $ifNull: ["$Salon.name", ""] }
+            }
+        }
+    ];
+
+    // Apply search
+    if (searchTerm !== "") {
+        const regex = new RegExp(searchTerm, "i");
+        pipeline.push({
+            $match: {
+                $or: [
+                    { salonNameSafe: regex },
+                    { services: { $elemMatch: { name: regex } } },
+                    { requestedByEmailSafe: regex },
+                    { requestedFromEmailSafe: regex }
+                ]
+            }
+        });
     }
 
-    if (salonId) {
-        query["Salon.id"] = salonId;
-    }
+    // Count total
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const totalResult = await Appointment.aggregate(countPipeline);
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
+    // Sort, paginate, and project final fields
+    pipeline.push(
+        { $sort: { updatedAt: sortOrder } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+            $project: {
+                salonName: "$Salon.name",
+                salonImage: "$Salon.image",
+                status: 1,
+                services: { $map: { input: "$services", as: "s", in: "$$s.name" } },
+                appointmentDate: 1,
+                startTime: 1,
+                requestedByEmail: "$requestedByEmailSafe",
+                requestedFromEmail: "$requestedFromEmailSafe",
+                type: "$sourceType"
+            }
+        }
+    );
 
-    const total = await Appointment.countDocuments(query);
-
-    const appointments = await Appointment.find(query)
-        .select({
-            "Salon.name": 1,
-            "Salon.image": 1,
-            status: 1,
-            services: 1,
-            appointmentDate: 1,
-            startTime: 1,
-            RequestedBy: 1,
-            RequestedFrom: 1
-        })
-        .populate("RequestedBy", "email")
-        .populate("RequestedFrom", "email")
-        .sort({ updatedAt: sortOrder })
-        .skip(skip)
-        .limit(limit);
-
-    const items = appointments.map(a => ({
-        salonName: a.Salon?.name || "",
-        salonImage: a.Salon?.image || "",
-        status: a.status,
-        requestedByEmail: a.RequestedBy?.email || "",
-        requestedFromEmail: a.RequestedFrom?.email || "",
-        services: a.services.map(s => s.name),
-        appointmentDate: a.appointmentDate,
-        startTime: a.startTime
-    }));
+    const items = await Appointment.aggregate(pipeline);
 
     return {
         items,
         total,
         page,
         pages: Math.ceil(total / limit),
-        sort
+        sort,
+        search
     };
 };
-
 
 module.exports = {
     createAppointment,
@@ -398,5 +515,5 @@ module.exports = {
     declineAppointment,
     getAppointments,
     confirmAppointment,
-    createAndScheduleAppointmentForInvites
+    createAndScheduleAppointment
 }

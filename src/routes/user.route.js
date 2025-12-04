@@ -5,6 +5,8 @@ const userController = require('../controllers/user.controller');
 
 
 router.get('/get-profile', protect(), userController.getProfile);
+router.get("/get-salon-by-id/:id", protect(), userController.getSalonById);
+router.get("/get-daily-stats/", protect("salon-owner"), userController.getSalonDailyStats);
 
 router.get('/get-all-salons', protect(), userController.getAllSalons);
 router.get('/get-user-by-id/:id', protect('admin'), userController.getUserById);

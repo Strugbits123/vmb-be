@@ -1,5 +1,7 @@
+const moment = require("moment")
 const User = require("../models/User/user.model");
 const Salon = require("../models/User/salon-owner.model");
+const Appointment = require("../models/Appointment/appointment.model");
 const SalonService = require("../models/Service/salon-service.model")
 
 
@@ -78,9 +80,53 @@ const getAllSalons = async (page = 1, limit = 10, sort = "newest") => {
 };
 
 
+const getSalonById = async (salonId) => {
+  const salon = await Salon.findById(salonId);
+  const services = await SalonService.find({ salonId: salonId });
+  const salonWithServices = {
+    ...salon._doc,
+    services,
+    distance: "5 miles away",
+  };
+  if (!salon) throw new Error("Salon not found");
+  return salonWithServices;
+};
+const getSalonDailyStats = async (salonId) => {
+
+    const startOfDayStr = moment().startOf("day").format("YYYY-MM-DD");
+    const endOfDayStr = moment().endOf("day").format("YYYY-MM-DD");
+
+    const [
+        appointmentsCount,
+        totalServicesCount
+    ] = await Promise.all([
+
+        Appointment.countDocuments({
+            "Salon.id": salonId,
+            appointmentDate: {
+                $gte: startOfDayStr,
+                $lte: endOfDayStr,
+            },
+        }),
+
+        SalonService.countDocuments({
+            salonId: salonId
+        }),
+
+    ]);
+
+    return {
+        appointmentsCount,
+        totalServicesCount
+    };
+};
+
+
 module.exports = {
     getUserById,
     updateUser,
     updateSalon,
-    getAllSalons
+    getAllSalons,
+    getSalonById,
+    getSalonDailyStats
 };
