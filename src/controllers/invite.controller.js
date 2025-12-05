@@ -42,7 +42,7 @@ const acceptInvite = async (req, res) => {
         }
 
         if(isValidInvite.status === 'claimed'){
-            throw new Error("Cannot claim a already claimed gift")
+            throw new Error("Cannot claim a already claimed invite")
         }
 
         console.log("invite", isValidInvite);
@@ -50,7 +50,8 @@ const acceptInvite = async (req, res) => {
 
         data.appointment = appointment._id
         const result = await inviteService.acceptInvite(inviteId, data)
-
+        console.log("result", result);
+        
         return SuccessHandler("Invite accepted successfully", result, 200, res, req);
     } catch (error) {
         const message = getValidationErrorMessage(error);

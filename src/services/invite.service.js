@@ -43,6 +43,10 @@ const getInviteDetails = async (id) => {
 const acceptInvite = async (id, data) => {
 
     const invite = await Invite.findById(id)
+        .populate({
+            path: 'services',
+            select: 'serviceName servicePrice serviceDuration'
+        });
     if (!invite) {
         throw new Error("Not a valid invite")
     }
@@ -224,7 +228,7 @@ const getInvites = async ({
     limit = 10,
     sort = "newest",
     search = "",
-    status = "" 
+    status = ""
 }) => {
     const skip = (page - 1) * limit;
     const sortOrder = sort === "oldest" ? 1 : -1;
@@ -242,10 +246,10 @@ const getInvites = async ({
 
     if (searchTerm !== "") {
         const regex = new RegExp(searchTerm, "i");
-        
+
         const [matchingServices, matchingSalons] = await Promise.all([
             Service.find({ serviceName: regex }).select("_id").lean(),
-            User.find({ 
+            User.find({
                 $or: [
                     { salonName: regex },
                     { email: regex }
@@ -314,7 +318,7 @@ const getInvites = async ({
             discountPercentage: a.discountPercentage,
             inviteeEmail: a.inviteeEmail,
             message: a.message || "",
-            services: a.services.serviceName || "", 
+            services: a.services.serviceName || "",
             createdAt: created.format("YYYY-MM-DD"),
             expiresOn: expiresOn.format("YYYY-MM-DD"),
         };
@@ -327,7 +331,7 @@ const getInvites = async ({
         pages: Math.ceil(total / limit),
         sort,
         search,
-        status: statusFilter || 'all' 
+        status: statusFilter || 'all'
     };
 };
 

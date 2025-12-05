@@ -1,4 +1,5 @@
 const moment = require("moment");
+const axios = require("axios")
 
 const setAuthCookie = (res, token) => {
     const cookieOptions = {
@@ -28,7 +29,7 @@ const convertToMinutes = (timeStr) => {
     return hours * 60 + minutes;
 }
 
-function validateSalonOperatingHours(appointmentDate, startTime, salon) {
+const validateSalonOperatingHours = (appointmentDate, startTime, salon) => {
     if (!appointmentDate || !startTime) {
         throw new Error("Appointment date and start time are required");
     }
@@ -75,4 +76,44 @@ function validateSalonOperatingHours(appointmentDate, startTime, salon) {
     return true;
 }
 
-module.exports = { setAuthCookie, convertToMinutes, validateSalonOperatingHours };
+
+const validateZipCode = async (zipcode) => {
+    if (!zipcode) {
+        return { status: false, message: "ZIP code is required" };
+    }
+
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${zipcode}&key=${apiKey}`;
+
+    try {
+        const { data } = await axios.get(url);
+
+        if (!data.results || data.results.length === 0) {
+            return { status: false, message: "Invalid ZIP code" };
+        }
+
+        const postal = data.results[0].address_components.find(c =>
+            c.types.includes("postal_code")
+        );
+
+        if (!postal) {
+            return { status: false, message: "Invalid ZIP code" };
+        }
+
+        const { lat, lng } = data.results[0].geometry.location;
+
+        return { 
+            status: true, 
+            message: "Valid ZIP code",
+            lat: lat,
+            lng: lng
+        };
+
+    } catch (error) {
+        console.error("ZIP validation error:", error.message);
+        return { status: false, message: "Error validating ZIP code" };
+    }
+};
+
+
+module.exports = { setAuthCookie, convertToMinutes, validateSalonOperatingHours, validateZipCode };

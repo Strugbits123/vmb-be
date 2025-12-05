@@ -81,12 +81,50 @@ const rejectGift = async (giftId) => {
 }
 
 const getGiftDetails = async (giftId) => {
-    const gift = await Gift.findById(giftId).populate('services');
+    const gift = await Gift.findById(giftId)
+        .populate({
+            path: "services",
+            select: "serviceName servicePrice serviceDuration"
+        })
+        .populate({
+            path: "requesterId",
+            select: "name email phoneNumber userProfile"
+        });
+
     if (!gift) {
-        throw new Error('Gift not found');
+        throw new Error("Gift not found");
     }
-    return gift;
-}
+
+    const receiver = await User.findOne(
+        { email: gift.receiverEmail },
+        "name email phoneNumber userProfile"
+    );
+
+    const normalizeUser = (user) => ({
+        name: user?.name || "",
+        email: user?.email || "",
+        phoneNumber: user?.phoneNumber || "",
+        userProfile: user?.userProfile || "",
+    });
+
+    const requester = normalizeUser(gift.requesterId || {});
+    const receiverNormalized = normalizeUser(receiver || {});
+
+    const services = (gift.services || []).map(s => ({
+        serviceName: s?.serviceName || "",
+        servicePrice: s?.servicePrice || "",
+        serviceDuration: s?.serviceDuration || ""
+    }));
+
+    return {
+        ...gift.toObject(),
+        services,
+        requester,
+        receiver: receiverNormalized
+    };
+};
+
+
 
 // const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, sort = "newest" }) => {
 //     if (!["newest", "oldest"].includes(sort)) {
@@ -144,7 +182,7 @@ const fetchGifts = async ({ requesterId, receiverEmail, page = 1, limit = 10, so
     // If search is provided, find matching IDs first
     if (search && search.trim()) {
         const searchRegex = new RegExp(search.trim(), "i");
-        
+
         const [matchingServices, matchingSalons, matchingRequesters] = await Promise.all([
             Service.find({ serviceName: searchRegex }).select("_id").lean(),
             User.find({ $or: [{ salonName: searchRegex }, { email: searchRegex }] }).select("_id").lean(),
