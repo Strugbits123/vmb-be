@@ -16,14 +16,14 @@ const getProfile = async (req, res) => {
 };
 
 const getSalonById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await userService.getSalonById(id);
-    return SuccessHandler("Salon fetched successfully", result, 200, res, req);
-  } catch (error) {
-    const message = getValidationErrorMessage(error);
-    return ErrorHandler(message, 400, req, res);
-  }
+    try {
+        const { id } = req.params;
+        const result = await userService.getSalonById(id);
+        return SuccessHandler("Salon fetched successfully", result, 200, res, req);
+    } catch (error) {
+        const message = getValidationErrorMessage(error);
+        return ErrorHandler(message, 400, req, res);
+    }
 };
 
 const updateProfile = async (req, res) => {
@@ -65,14 +65,40 @@ const getAllSalons = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        const sort = req.query.sort || 'newest'
-        const result = await userService.getAllSalons(page, limit, sort);
-        return SuccessHandler("Requested gifts fetched successfully", result, 200, res, req);
+        const sort = req.query.sort || null;
+
+        const distance = req.query.distance ? Number(req.query.distance) : null;
+        const search = req.query.search ? req.query.search.trim() : "";
+
+        const userLat = req.query.userLat ? Number(req.query.userLat) : null;
+        const userLng = req.query.userLng ? Number(req.query.userLng) : null;
+
+        console.log("lat", userLat, userLng);
+
+        const result = await userService.getAllSalons({
+            page,
+            limit,
+            sort,
+            distance,
+            search,
+            userLat,
+            userLng
+        });
+
+        return SuccessHandler(
+            "Salons fetched successfully",
+            result,
+            200,
+            res,
+            req
+        );
+
     } catch (error) {
         const message = getValidationErrorMessage(error);
         return ErrorHandler(message, 400, req, res);
     }
-}
+};
+
 
 const getSalonDailyStats = async (req, res) => {
     try {

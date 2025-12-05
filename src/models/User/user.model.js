@@ -86,6 +86,10 @@ const userSchema = new Schema(
         message: "Image must be a valid URL",
       },
     },
+    location: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: { type: [Number], index: "2dsphere" }, 
+    },
     resetPasswordExpire: {
       type: Date,
     }

@@ -3,15 +3,24 @@ const SalonOwner = require("../models/User/salon-owner.model");
 const sendMail = require("../utils/sendMail");
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const { validateZipCode } = require("../utils/util")
 
 const registerCustomer = async ({ name, email, address, zipcode, password, confirmPassword }) => {
   if (password !== confirmPassword) throw new Error("Passwords do not match");
+
+  const zip = await validateZipCode(zipcode)
+  if (!zip.status) throw new Error("Please enter a valid zipcode")
+
+  const { lat, lng } = zip
 
   const existingUser = await User.findOne({ email });
   if (existingUser) throw new Error("Email is already taken. Please enter a different email.");
 
   const user = await User.create({
-    name, email, address, zipcode, password, status: "approved"
+    name, email, address, zipcode, password, status: "approved", location: {
+      type: "Point",
+      coordinates: [lng, lat] 
+    },
   });
 
   const token = user.getSignedJwtToken();
@@ -22,14 +31,23 @@ const registerCustomer = async ({ name, email, address, zipcode, password, confi
 };
 
 const registerSalonOwner = async (data) => {
-  const { email, password, confirmPassword } = data;
+  const { email, password, confirmPassword, zipcode } = data;
   if (password !== confirmPassword) throw new Error("Passwords do not match");
+
+  const zip = await validateZipCode(zipcode)
+  if (!zip.status) throw new Error("Please enter a valid zipcode")
+
+  const { lat, lng } = zip
 
   const existingUser = await User.findOne({ email });
   if (existingUser) throw new Error("Email is already taken. Please enter a different email.");
 
-  const salonOwner = await SalonOwner.create({
+  await SalonOwner.create({
     ...data,
+    location: {
+      type: "Point",
+      coordinates: [lng, lat] 
+    },
     role: "salon-owner",
     status: "pending",
   });
@@ -57,7 +75,7 @@ const login = async ({ email, password }) => {
 
 const forgotPassword = async (email) => {
 
-  if(!email) throw new Error('Email is required');
+  if (!email) throw new Error('Email is required');
 
   const user = await User.findOne({ email });
   if (!user) throw new Error('No user found with this email');
@@ -80,11 +98,11 @@ const forgotPassword = async (email) => {
 };
 
 const resetPassword = async (token, newPassword, confirmPassword) => {
-  
+
   if (newPassword !== confirmPassword) throw new Error('Passwords do not match');
 
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-  
+
   const user = await User.findOne({
     resetPasswordToken: hashedToken,
     resetPasswordExpire: { $gt: Date.now() },

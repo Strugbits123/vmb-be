@@ -71,7 +71,6 @@ const createAppointment = async (data, type, startTime = null, appointmentDate =
     const appointment = new Appointment(obj);
     await appointment.save();
 
-    console.log("this appointment", appointment);
 
     return appointment;
 };
@@ -103,13 +102,29 @@ const createAndScheduleAppointment = async (data, type, startTime, appointmentDa
         throw new Error("Unable to get details of the user to which invite was sent");
     }
 
-    const serviceInfo = await Service.findById(services)
+    // const serviceInfo = await Service.findById(services)
+    //     .select("serviceName servicePrice serviceDuration")
+    //     .lean();
+
+    // if (!serviceInfo) {
+    //     throw new Error("Selected service is invalid");
+    // }
+
+    const serviceIds = type === "invite"
+        ? [services]
+        : Array.isArray(services)
+            ? services
+            : (() => { throw new Error("Services must be an array for booking"); })();
+
+    const serviceDocs = await Service.find({ _id: { $in: serviceIds } })
         .select("serviceName servicePrice serviceDuration")
         .lean();
 
-    if (!serviceInfo) {
-        throw new Error("Selected service is invalid");
+
+    if (serviceDocs.length !== serviceIds.length) {
+        throw new Error("One or more selected services are invalid");
     }
+
 
     if (!startTime || !appointmentDate) {
         throw new Error("Start time and appointment date are required to schedule an appointment");
@@ -134,18 +149,20 @@ const createAndScheduleAppointment = async (data, type, startTime, appointmentDa
     obj.appointmentDate = appointmentDate;
     obj.status = "scheduled"
 
-    obj.services = [{
-        serviceId: serviceInfo._id,
-        name: serviceInfo.serviceName,
-        price: serviceInfo.servicePrice,
-        duration: serviceInfo.serviceDuration
-    }];
+    obj.services = serviceDocs.map(s => ({
+        serviceId: s._id,
+        name: s.serviceName,
+        price: s.servicePrice,
+        duration: s.serviceDuration
+    }));
 
     obj.timeline = [{
         event: "Appointment Created",
         description: "Appointment was created successfully",
         tag: "scheduled"
     }];
+
+
 
     const appointment = new Appointment(obj);
     await appointment.save();
@@ -446,11 +463,26 @@ const getAppointments = async ({
 
         // Create safe fields for search
         {
+            // $addFields: {
+            //     requestedByEmailSafe: { $ifNull: ["$requestedBy.email", ""] },
+            //     requestedFromEmailSafe: { $ifNull: ["$requestedFrom.email", ""] },
+            //     salonNameSafe: { $ifNull: ["$Salon.name", ""] }
+            // }
+
             $addFields: {
                 requestedByEmailSafe: { $ifNull: ["$requestedBy.email", ""] },
+                requestedByName: { $ifNull: ["$requestedBy.name", ""] },
+                requestedByPhone: { $ifNull: ["$requestedBy.phoneNumber", ""] },
+                requestedByProfile: { $ifNull: ["$requestedBy.userProfile", ""] },
+
                 requestedFromEmailSafe: { $ifNull: ["$requestedFrom.email", ""] },
+                requestedFromName: { $ifNull: ["$requestedFrom.name", ""] },
+                requestedFromPhone: { $ifNull: ["$requestedFrom.phoneNumber", ""] },
+                requestedFromProfile: { $ifNull: ["$requestedFrom.userProfile", ""] },
+
                 salonNameSafe: { $ifNull: ["$Salon.name", ""] }
             }
+
         }
     ];
 
@@ -487,8 +519,21 @@ const getAppointments = async ({
                 services: { $map: { input: "$services", as: "s", in: "$$s.name" } },
                 appointmentDate: 1,
                 startTime: 1,
-                requestedByEmail: "$requestedByEmailSafe",
-                requestedFromEmail: "$requestedFromEmailSafe",
+                reschduleReason: 1,
+                // requestedByEmail: "$requestedByEmailSafe",
+                // requestedFromEmail: "$requestedFromEmailSafe",
+                requestedBy: {
+                    email: "$requestedByEmailSafe",
+                    name: "$requestedByName",
+                    phone: "$requestedByPhone",
+                    image: "$requestedByProfile",
+                },
+                requestedFrom: {
+                    email: "$requestedFromEmailSafe",
+                    name: "$requestedFromName",
+                    phone: "$requestedFromPhone",
+                    image: "$requestedFromProfile",
+                },
                 type: "$sourceType"
             }
         }
